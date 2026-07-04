@@ -1,0 +1,24 @@
+name: 每日代币化股价
+
+on:
+  schedule:
+    - cron: '5 2 * * *'     # 每天 UTC 02:05 = 北京时间 10:05(紧跟股票分析)
+  workflow_dispatch:
+
+jobs:
+  tokenized:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v5
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 拉取代币化股价并发邮件
+        env:
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECEIVERS: ${{ secrets.EMAIL_RECEIVERS }}
+        run: python scripts/tokenized_price_report.py
