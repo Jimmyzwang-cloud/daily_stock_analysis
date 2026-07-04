@@ -1,32 +1,35 @@
 #!/usr/bin/env python3
-# 拉美光 MU 近期日线 + 关键指标,输出供分析
-import json, urllib.request
+# 用 yfinance 拉美光 MU 近期日线(云端境外可用)
+import subprocess, sys
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "yfinance"], check=False)
+import yfinance as yf
 
-def fetch(url, timeout=25):
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read().decode("utf-8", "ignore")
+t = yf.Ticker("MU")
+h = t.history(period="3mo")
+print("=== 美光 MU 近3个月日线 ===")
+print("总交易日:", len(h))
+print("=== 近30日 (日期 收盘 涨跌% 成交量) ===")
+closes = h["Close"].tolist()
+dates = [str(d.date()) for d in h.index]
+vols = h["Volume"].tolist()
+for i in range(max(0, len(h)-30), len(h)):
+    chg = (closes[i]/closes[i-1]-1)*100 if i > 0 else 0
+    print(f"{dates[i]}  ${closes[i]:.2f}  {chg:+.2f}%  vol={int(vols[i]/1e6)}M")
 
-# 东财美股日线(105.MU)
-url = ("https://push2his.eastmoney.com/api/qt/stock/kline/get?"
-       "secid=105.MU&fields1=f1,f2,f3,f4,f5,f6&"
-       "fields2=f51,f52,f53,f54,f55,f56,f57&klt=101&fqt=1&beg=20260401&end=20260704")
+# 关键统计
+print("=== 关键统计 ===")
+print(f"最新收盘: ${closes[-1]:.2f}  日期: {dates[-1]}")
+print(f"3个月最高: ${max(closes):.2f}")
+print(f"3个月最低: ${min(closes):.2f}")
+print(f"3个月涨幅: {(closes[-1]/closes[0]-1)*100:+.1f}%")
+print(f"近1个月涨幅: {(closes[-1]/closes[max(0,len(closes)-22)]-1)*100:+.1f}%")
+
+# 基本面
 try:
-    d = json.loads(fetch(url))
-    data = d.get("data") or {}
-    klines = data.get("klines") or []
-    print("股票:", data.get("name"), data.get("code"))
-    print("总条数:", len(klines))
-    print("=== 近 40 日 (日期,开,收,高,低,成交量,成交额,振幅%) ===")
-    for line in klines[-40:]:
-        print(line)
+    info = t.info
+    print("=== 基本面 ===")
+    for k in ["marketCap","trailingPE","forwardPE","fiftyTwoWeekHigh","fiftyTwoWeekLow","targetMeanPrice"]:
+        print(f"{k}: {info.get(k)}")
 except Exception as e:
-    print("东财失败:", str(e)[:150])
-
-# 实时快照
-try:
-    rt = json.loads(fetch("https://push2.eastmoney.com/api/qt/stock/get?secid=105.MU&fields=f43,f44,f45,f46,f60,f170,f171"))
-    print("=== 实时 ===", json.dumps(rt.get("data"), ensure_ascii=False))
-except Exception as e:
-    print("实时失败:", str(e)[:100])
+    print("基本面失败:", str(e)[:80])
 print("FETCH_DONE")
