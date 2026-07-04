@@ -1,7 +1,8 @@
 name: Keepalive 保活
 
 # 目的:fork 仓库连续 60 天无 commit 活动会被 GitHub 自动禁用 schedule 定时任务。
-# 本 workflow 每周跑一次,临近阈值时自动产生一次 commit,保证每日分析/代币化任务长期不断。
+# 本 workflow 每周更新一个时间戳文件并 commit,保证每日分析/代币化任务长期不断。
+# 仅用 GitHub 官方 action + 原生 git,不依赖任何第三方 action(避免 Repository access blocked)。
 
 on:
   schedule:
@@ -9,7 +10,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
   contents: write
 
 jobs:
@@ -18,5 +18,11 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
-      - name: 保活(临近 60 天时自动 commit)
-        uses: gautamkrishnar/keepalive-workflow@v2
+      - name: 更新时间戳并提交
+        run: |
+          echo "last keepalive: $(date -u +%Y-%m-%dT%H:%M:%SZ)" > .github/keepalive.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive.txt
+          git commit -m "chore: keepalive $(date -u +%Y-%m-%d)" || echo "无变更,跳过"
+          git push
