@@ -1,0 +1,13 @@
+name: 临时拉美光数据
+on:
+  workflow_dispatch:
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python scripts/fetch_mu_history.py
