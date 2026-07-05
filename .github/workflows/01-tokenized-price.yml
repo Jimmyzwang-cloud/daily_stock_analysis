@@ -1,8 +1,8 @@
 name: 每日代币化股价
 
 on:
-  schedule:
-    - cron: '0 13 * * *'     # 每天 UTC 13:00 = 北京时间 21:00
+  # schedule:  # 已停用云端定时,改本地跑
+#    - cron: '0 13 * * *'     # 每天 UTC 13:00 = 北京时间 21:00
   workflow_dispatch:
 
 jobs:
